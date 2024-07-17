@@ -1,0 +1,21 @@
+# Beige Book LLM Forecasting Analysis
+
+## Project Overview
+
+This project aims to assess the forecasting capabilities of Large Language Models (LLMs) using Federal Reserve Beige Book reports. By analyzing these economic reports, we seek to evaluate how well LLMs can interpret and predict economic trends.
+
+## Current Stage
+
+This project is in its pre-alpha stage. Components and methodologies are subject to significant changes as the research progresses.
+
+## Data Sources
+
+- Primary source: Federal Reserve Beige Book reports (1970-2023)
+- Supplementary source: Additional reports manually collected to fill data gaps
+
+## Project Goals
+
+1. Scrape and compile a comprehensive dataset of Beige Book reports
+2. Develop a matrix to analyze the completeness of the dataset
+3. Implement LLM-based analysis of the reports
+4. Evaluate the forecasting accuracy of LLMs against economic indicators
