@@ -1,67 +1,56 @@
-import boto3
-import json
+import csv
+import os
+import random
+from typing import List, Dict
 
-class LLMAnalyser:
+class MockLLMAnalyser:
     def __init__(self):
-        self.bedrock = boto3.client(service_name='bedrock-runtime')
+        self.metrics = ["gdp", "interest_rates", "inflation", "employment", "stock_market"]
 
-    def analyse_text(self, text, model_id):
-        prompt = f"""
+    def analyse_text(self, text: str, model_id: str) -> Dict[str, int]:
+        mock_analysis = {}
+        for metric in self.metrics:
+            rating = random.choice([-1, 0, 1])
+            mock_analysis[metric] = rating
+        return mock_analysis
     
-Analyze the provided Beige Book chapter, focusing on five key economic metrics:
-1. GDP (Gross Domestic Product)
-2. Interest Rates
-3. Inflation
-4. Employment
-5. Stock Market Performance (specifically SPX returns)
-For each metric, provide:
-1. A forecasting rating: 1 (likely to increase), -1 (likely to decrease), 0 (likely to remain stable)
-2. A concise justification for the rating
-
-Format your response as follows for each metric:
-{{rating:justification}}
-
-Critical Instructions:
-- Your ratings should reflect definitive FORECASTS based on the information in the text, not current conditions.
-- Provide a clear, unambiguous justification that aligns with the given rating. Avoid phrases like "likely to continue or remain stable" - choose one direction.
-- Conduct a holistic analysis using ALL relevant information in the text, even if a specific metric isn't directly mentioned.
-- Infer potential impacts on each metric based on related economic factors discussed in the text.
-- A neutral (0) rating should only be given when there's a genuine balance of positive and negative factors, not due to lack of direct mention.
-- Use economic reasoning to connect different aspects of the economy. For example, strong employment might suggest positive stock market performance.
-- Base your analysis SOLELY on the information provided in the given text.
-- Do NOT consider any external current, future, or past events, or known data about these metrics.
-- Ensure justifications are concise yet informative, suitable for qualitative analysis.
-- Maintain consistency in your analytical approach across all five metrics.
-
-Here's the text to analyze:
-
-"{text}"
-
-Provide your analysis based solely on the information in this text.
-
-"""
-
-        body = json.dumps({
-            "prompt": prompt,
-            "max_tokens_to_sample": 1000,
-            "temperature": 0.5,
-            "top_p": 0.9,
-        })
-
-        response = self.bedrock.invoke_model(body=body, modelId=model_id)
-        response_body = json.loads(response.get('body').read())
+    def analyse_and_fill_csv(self, text: str, csv_filename: str, models: List[str]):
+        headers = ["Metrics"] + models
         
-        # Parse the response and extract ratings and justifications
-        analysis = {}
-        lines = response_body.get('completion').strip().split('\n')
-        metrics = ['gdp', 'interest_rate', 'inflation', 'employment', 'stock_market']
-        for metric, line in zip(metrics, lines):
-            rating, justification = line.split(':', 1)
-            analysis[metric] = {'rating': int(rating.strip('{}')), 'justification': justification.strip()}
+        results: Dict[str, Dict[str, int]] = {}
+        for model in models:
+            results[model] = self.analyse_text(text, model)
         
-        return analysis
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(script_dir, '..', 'data')
+        
+        os.makedirs(data_dir, exist_ok=True)
+        
+        csv_path = os.path.join(data_dir, csv_filename)
+        
+        with open(csv_path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
+            
+            for metric in self.metrics:
+                row = [metric.replace("_", " ").title()]
+                for model in models:
+                    row.append(results[model][metric])
+                writer.writerow(row)
 
-    def get_available_models(self):
-        # This is a placeholder. You'll need to implement this based on 
-        # how Amazon Bedrock provides model information.
-        return ['anthropic.claude-v2', 'ai21.j2-ultra-v1', 'amazon.titan-text-express-v1']
+        print(f"CSV file created: {csv_path}")
+
+    def get_models(self):
+        return ['mock.model-1', 'mock.model-2', 'mock.model-3']
+
+def main():
+    analyser = MockLLMAnalyser()
+    models = analyser.get_models()
+    beige_book_text = "This is a sample Beige Book text for testing purposes."
+    
+    csv_filename = "analysis_results.csv"
+
+    analyser.analyse_and_fill_csv(beige_book_text, csv_filename, models)
+
+if __name__ == "__main__":
+    main()

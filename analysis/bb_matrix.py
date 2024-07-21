@@ -2,6 +2,11 @@ import os
 import csv
 import calendar
 from collections import defaultdict
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import seaborn as sns
+import pandas as pd
+import numpy as np
 
 class Matrix:
     def __init__(self, base_path="beige_books"):

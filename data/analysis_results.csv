@@ -1,0 +1,6 @@
+Metrics,mock.model-1,mock.model-2,mock.model-3
+Gdp,1,1,-1
+Interest Rates,-1,1,-1
+Inflation,0,0,1
+Employment,1,1,0
+Stock Market,0,0,-1
