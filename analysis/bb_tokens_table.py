@@ -1,6 +1,10 @@
 import os
 import csv
 from playwright.sync_api import sync_playwright
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from modules.paths import Paths
 
 def tokenize_text(page, text, is_first):
     page.fill('textarea.text-input', text)
@@ -51,9 +55,9 @@ def save_to_csv(results, output_file):
             writer.writerow([date] + [counts.get(district, 0) for district in districts])
 
 if __name__ == "__main__":
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    root_dir = os.path.join(os.path.dirname(current_dir), "beige_books")
-    output_file = os.path.join(os.path.dirname(current_dir), "data", "analysis_results_all_years.csv")
+    paths = Paths()
+    root_dir = paths.beige_books_raw_scraped()
+    output_file = os.path.join(paths.master(), "data", "bb_tokens_table.csv")
 
     results = process_beige_books(root_dir)
     save_to_csv(results, output_file)

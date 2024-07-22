@@ -3,8 +3,10 @@ import re
 import requests
 from bs4 import BeautifulSoup
 import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from modules import Logger
+from modules.logger import Logger
+from modules.paths import Paths
 
 class Scraper:
     def __init__(self):
@@ -26,9 +28,9 @@ class Scraper:
             "st_louis": "sl",
             "national_summary": "su"
         }
-        self.base_path = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-        self.beige_books_folder = os.path.join(self.base_path, "..", "beige_books/raw_scraped")
-        self.logger = Logger(os.path.join(self.base_path, "..", "scraper", "scraper_log"))
+        paths = Paths()
+        self.beige_books_folder = paths.bb_raw_scraped()
+        self.logger = Logger(os.path.join(paths.scraper(), "scraper_log"))
     
     def ensure_dir(self, file_path):
         directory = os.path.dirname(file_path)
