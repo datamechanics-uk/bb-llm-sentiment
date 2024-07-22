@@ -9,7 +9,7 @@ from modules import Logger
 class Scraper:
     def __init__(self):
         self.header = "https://www.minneapolisfed.org/beige-book-reports/"
-        self.years = list(range(1970, 2023))
+        self.years = list(range(1970, 2024))
         self.months = list(range(1, 13))
         self.regions = {
             "atlanta": "at",
@@ -26,9 +26,10 @@ class Scraper:
             "st_louis": "sl",
             "national_summary": "su"
         }
-        self.logger = Logger(os.path.join("scraper", "scraper_log"))
-        self.base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "beige_books"))
-
+        self.base_path = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+        self.beige_books_folder = os.path.join(self.base_path, "..", "beige_books/raw_scraped")
+        self.logger = Logger(os.path.join(self.base_path, "..", "scraper", "scraper_log"))
+    
     def ensure_dir(self, file_path):
         directory = os.path.dirname(file_path)
         if not os.path.exists(directory):
@@ -42,7 +43,7 @@ class Scraper:
                     continue
 
                 for name, code in self.regions.items():
-                    file_path = os.path.join(self.base_path, str(year), f"{month:02d}", f"{name}.txt")
+                    file_path = os.path.join(self.beige_books_folder, str(year), f"{month:02d}", f"{name}.txt")
                     
                     # Skip if file already exists
                     if os.path.exists(file_path):
