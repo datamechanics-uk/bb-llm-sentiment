@@ -1,4 +1,4 @@
-requests
-beautifulsoup4
+requests=2.23.3
+beautifulsoup4=4.8.1
 boto3
 playwright
