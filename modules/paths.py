@@ -16,6 +16,9 @@ class Paths:
     def beige_books_raw_scraped(self):
         return os.path.join(self.root, 'beige_books', 'raw_scraped')
 
+    def data(self):
+        return os.path.join(self.root, 'data')
+
     def modules(self):
         return os.path.join(self.root, 'modules')
 
