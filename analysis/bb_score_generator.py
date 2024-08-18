@@ -9,9 +9,9 @@ import os
 
 brt = boto3.client(
     service_name='bedrock-runtime',
-    region=os.environ.get('AWS_REGION'),
-    aws_access=os.environ.get('AWS_ACCESS'),
-    aws_secret=os.environ.get('AWS_SECRET')
+    region_name=os.environ.get('AWS_REGION'),
+    aws_access_key_id=os.environ.get('AWS_ACCESS'),
+    aws_secret_access_key=os.environ.get('AWS_SECRET')
 )
 
 prompt_input = """
