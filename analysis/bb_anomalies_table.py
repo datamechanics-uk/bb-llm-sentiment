@@ -48,7 +48,7 @@ class Table:
 
     def write_table_to_csv(self, output_file=None):
         if output_file is None:
-            output_file = os.path.join(os.path.dirname(__file__), "..", "data", "bb_anomalies_table.csv")
+            output_file = os.path.join(os.path.dirname(__file__), "..", "data", "bb_anomalies_table2.csv")
 
         table, missing_releases, missing_chapters = self.generate_table()
         os.makedirs(os.path.dirname(output_file), exist_ok=True)

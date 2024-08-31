@@ -19,3 +19,16 @@ This project is in its pre-alpha stage. Components and methodologies are subject
 2. Develop a matrix to analyze the completeness of the dataset
 3. Implement LLM-based analysis of the reports
 4. Evaluate the forecasting accuracy of LLMs against economic indicators
+
+
+## Venv
+Make sure that Activate.ps1 contains:
+$env:AWS_REGION = "region"
+$env:AWS_ACCESS = "accrss key"
+$env:AWS_SECRET = "secret key"
+
+Activate environment using:
+    venv/Scripts/Activate.ps1
+
+If FullyQualifiedErrorId : UnauthorizedAccess when activating env, do:
+    Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
