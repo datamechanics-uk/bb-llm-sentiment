@@ -1,16 +1,25 @@
 import os
 import csv
 import sys
-from collections import defaultdict
-from datetime import datetime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from modules.paths import Paths
-from modules.score import Score
+from modules.llm_score import LLM
 
 def read_beige_book_text(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         return file.read()
+
+def load_existing_rows(output_file):
+    existing_rows = set()
+    if os.path.isfile(output_file):
+        with open(output_file, 'r', newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)  # Skip header
+            for row in reader:
+                if len(row) >= 2:
+                    existing_rows.add((row[0], row[1]))
+    return existing_rows
 
 def save_to_csv(results, output_file):
     districts = ['atlanta', 'boston', 'chicago', 'cleveland', 'dallas', 'kansas_city',
@@ -22,36 +31,50 @@ def save_to_csv(results, output_file):
     with open(output_file, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         if not file_exists:
-            writer.writerow(['Date'] + districts)
+            writer.writerow(['Date', 'Metric'] + districts)
         
         for date, counts in sorted(results.items()):
-            row = [date] + [counts.get(district, '') for district in districts]
-            writer.writerow(row)
-            csvfile.flush()  # Ensure data is written immediately
+            gdp_row = [date, 'GDP']
+            sp500_row = [date, 'SP500']
+            for district in districts:
+                gdp_score, sp500_score = counts.get(district, ('', ''))
+                gdp_row.append(gdp_score)
+                sp500_row.append(sp500_score)
+            writer.writerow(gdp_row)
+            writer.writerow(sp500_row)
+            csvfile.flush() # Ensures data is written immediately
 
-def process_beige_books(root_dir, output_file):
-    score_instance = Score()
+def process_beige_books(root_dir, model):
+    output_file = os.path.join(Paths().master(), "data/llm_scores", f"{model.__name__}_scores.csv")
+    existing_rows = load_existing_rows(output_file)
+
     for year in sorted(os.listdir(root_dir)):
         year_path = os.path.join(root_dir, year)
         for month in os.listdir(year_path):
             date_key = f"{year}-{month}"
+            if (date_key, 'GDP') in existing_rows and (date_key, 'SP500') in existing_rows:
+                print(f"Skipping {date_key} as it already exists in the CSV.")
+                continue
+            
             results = {date_key: {}}
             month_path = os.path.join(year_path, month)
             for file in os.listdir(month_path):
                 file_path = os.path.join(month_path, file)
-                text = read_beige_book_text(file_path)
-                score_value = score_instance.score(text)
-                district = file.split('.')[0]
-                results[date_key][district] = score_value
-                print(f"Processed {date_key} - {district}: {score_value} score")
+                chapter = read_beige_book_text(file_path)
+                try:
+                    gdp_score, sp500_score = model(chapter=chapter)
+                    district = file.split('.')[0]
+                    results[date_key][district] = (gdp_score, sp500_score)
+                    print(f"Processed {date_key} - {district}: GDP score {gdp_score}, SP500 score {sp500_score}")
+                except ValueError as e:
+                    print(f"Error scoring text for {date_key} - {district}: {e}")
             
             # Save results after processing each month
             save_to_csv(results, output_file)
 
 if __name__ == "__main__":
     paths = Paths()
-    root_dir = paths.beige_books_raw_scraped()
-    output_file = os.path.join(paths.master(), "data", "bb_llm_scores_table.csv")
-    
-    process_beige_books(root_dir, output_file)
-    print(f"Results saved to {output_file}")
+    llm = LLM()
+
+    process_beige_books(root_dir=paths.beige_books_processed_all(), model=llm.Jurassic2Ultra)
+    print(f"Results saved")

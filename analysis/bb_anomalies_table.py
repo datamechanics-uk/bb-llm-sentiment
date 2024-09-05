@@ -12,7 +12,7 @@ class Table:
     def __init__(self):
         paths = Paths()
         self.base_path = paths.beige_books_raw_scraped()
-        self.years = range(1970, 2024)
+        self.years = range(2013, 2024)
         self.expected_releases = 8
         self.expected_chapters = 13
         self.months = [calendar.month_abbr[i] for i in range(1, 13)]
@@ -48,7 +48,7 @@ class Table:
 
     def write_table_to_csv(self, output_file=None):
         if output_file is None:
-            output_file = os.path.join(os.path.dirname(__file__), "..", "data", "bb_anomalies_table2.csv")
+            output_file = os.path.join(os.path.dirname(__file__), "..", "data", "bb_anomalies_table.csv")
 
         table, missing_releases, missing_chapters = self.generate_table()
         os.makedirs(os.path.dirname(output_file), exist_ok=True)

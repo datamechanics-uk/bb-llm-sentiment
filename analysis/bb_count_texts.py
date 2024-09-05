@@ -23,26 +23,28 @@ def bb_properties(directory):
     return total_bbs, total_chapters
 
 # Count for scraped Beige Books chapters and reports
-total_bbs, scraped_chapters = bb_properties(Paths().beige_books_raw_scraped())
+bbs_scraped, chapters_scraped = bb_properties(Paths().beige_books_raw_scraped())
 
 # Count for manually obtained Beige Book chapters
-_, manual_chapters = bb_properties(Paths().beige_books_raw_manual())
+bbs_manual, chapters_manual = bb_properties(Paths().beige_books_raw_manual())
 
-# Count total chapters
-total_chapters = scraped_chapters + manual_chapters
+# Count for processed Beige Books chapters
+bbs_processed, chapters_processed = bb_properties(Paths().beige_books_processed_all())
 
 # Prepare data for CSV
 csv_data = [
-    ['Total Beige Books', total_bbs],
-    ['Total Chapters', total_chapters],
-    ['Scraped Chapters', scraped_chapters],
-    ['Manual Chapters', manual_chapters]
+    ['Beige Books Scraped', bbs_scraped],
+    ['Chapters Scraped', chapters_scraped],
+    ['Chapters Manually Obtained', chapters_manual],
+    ['Beige Books Processed', bbs_processed],
+    ['Chapters Processed', chapters_processed]
 ]
 
 # Write to csv
 WriteCSV().write(path=Paths().data() + '/bb_count.csv', data=csv_data)
 
-print(f"Total Beige Books: {total_bbs}")
-print(f"Total Chapters: {total_chapters}")
-print(f"Scraped Chapters: {scraped_chapters}")
-print(f"Manual Chapters: {manual_chapters}")
+print(f"Scraped Beige Books: {bbs_scraped}")
+print(f"Scraped Chapters: {chapters_scraped}")
+print(f"Manually Obtained Chapters: {chapters_manual}")
+print(f"Processed Chapters: {chapters_processed}")
+print(f"Processed Beige Books: {bbs_processed}")
