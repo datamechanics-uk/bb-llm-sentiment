@@ -61,13 +61,15 @@ def process_beige_books(root_dir, model):
             for file in os.listdir(month_path):
                 file_path = os.path.join(month_path, file)
                 chapter = read_beige_book_text(file_path)
+                district = file.split('.')[0]
                 try:
                     gdp_score, sp500_score = model(chapter=chapter)
-                    district = file.split('.')[0]
                     results[date_key][district] = (gdp_score, sp500_score)
                     print(f"Processed {date_key} - {district}: GDP score {gdp_score}, SP500 score {sp500_score}")
                 except ValueError as e:
                     print(f"Error scoring text for {date_key} - {district}: {e}")
+                except Exception as e:
+                    print(f"Unexpected error for {date_key} - {district}: {e}")
             
             # Save results after processing each month
             save_to_csv(results, output_file)
@@ -76,5 +78,15 @@ if __name__ == "__main__":
     paths = Paths()
     llm = LLM()
 
-    process_beige_books(root_dir=paths.beige_books_processed_all(), model=llm.Jurassic2Ultra)
-    print(f"Results saved")
+    models = [
+        llm.TitanTextPremier,
+        llm.MistralLarge2402,
+        llm.CohereCommandRPlus,
+        llm.MetaLlama370B,
+        llm.Claude35Sonnet
+    ]
+
+    for model in models:
+        print(f"Processing with model: {model.__name__}")
+        process_beige_books(root_dir=paths.beige_books_processed_all(), model=model)
+        print(f"Results saved for model: {model.__name__}")

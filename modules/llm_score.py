@@ -17,34 +17,27 @@ class LLM:
 
     def prompt(self, model_id, chapter):
         # prompt = ""
-        # if model_id == 'anthropic.claude-3-5-sonnet-20240620-v1:0':
+        # if model_id.startswith('amazon.titan'):
         prompt = f"""
-You are an expert financial analyst with years of experience in economic prediction. 
-Numerically classify the following text based on its forecasted impact:
-United States GDP growth,Standard & Poor's 500 Index return
-
-GDP,S&P500
-
+You are an expert financial analyst with years of experience in economic forecasting.
+Classify the following text based on its forecasted impact on United States GDP growth and the S&P 500 Index return.
 Use only these scores: -1, -0.5, 0, 0.5, 1
 
--1: Clearly negative forecasted impact
+-1: Negative forecasted impact
 -0.5: Slightly negative forecasted impact
-0: Neutral or highly uncertain forecasted impact
+0: Neutral or uncertain forecasted impact
 0.5: Slightly positive forecasted impact
-1: Clearly positive forecasted impact
-
-GDP: Consider economic activity, employment, production, and overall growth trends
-S&P 500: Focus on business outlook, corporate profits, investor sentiment, and market conditions
+1: Positive forecasted impact
 
 Text to analyse:
 {chapter}
 
 Rules:
 - Respond with ONLY two scores from the list [-1, -0.5, 0, 0.5, 1], separated by a comma.
-- Avoid using 0 unless the impact is truly neutral or highly uncertain.
+- Avoid defaulting to 0.5; use 0.5 only if there is strong evidence for a slightly positive impact.
 - Consider both positive and negative aspects in the text.
-- GDP and S&P 500 scores can differ based on the information provided.
-- Look for subtle indicators and trends that might suggest future economic directions.
+- Do not hesitate to use -1 when appropraite.
+- The text has an inherently positive bias, so consider this when scoring. A 0.5 could actually just be neutral. Use your best judgment from reading the text.
 - Do not provide any additional commentary or text.
 
 Acceptable output format:
@@ -61,8 +54,9 @@ _,_
                     body=json.dumps({
                         "messages": [{"role": "user", "content": prompt_input}],
                         "max_tokens": 10,
-                        "temperature": 0.1,
-                        "top_p": 0.5,
+                        "temperature": 0.3,
+                        "top_p": 0.95,
+                        "top_k": 5,
                         "anthropic_version": "bedrock-2023-05-31"
                     }),
                     contentType='application/json',
@@ -75,8 +69,8 @@ _,_
                         "inputText": prompt_input,
                         "textGenerationConfig": {
                             "maxTokenCount": 10,
-                            "temperature": 0.1,
-                            "topP": 0.5
+                            "temperature": 0.3,
+                            "topP": 0.95,
                         }
                     }),
                     contentType='application/json',
@@ -87,7 +81,9 @@ _,_
                     message=prompt_input,
                     model=model_id,
                     max_tokens=10,
-                    temperature=0.1,
+                    temperature=0.3,
+                    p=0.95,
+                    k=5
                 )
             elif model_id.startswith('meta'):
                 response = self.brt.invoke_model(
@@ -95,8 +91,9 @@ _,_
                     body=json.dumps({
                         "prompt": prompt_input,
                         "max_gen_len": 10,
-                        "temperature": 0.1,
-                        "top_p": 0.5
+                        "temperature": 0.3,
+                        "top_p": 0.95,
+                        "top_k": 5
                     }),
                     contentType='application/json',
                     accept='application/json'
@@ -106,21 +103,10 @@ _,_
                     modelId=model_id,
                     body=json.dumps({
                         "prompt": prompt_input,
-                        "max_tokens": 10,
-                        "temperature": 0.1,
-                        "top_p": 0.5
-                    }),
-                    contentType='application/json',
-                    accept='application/json'
-                )
-            elif model_id.startswith('ai21'):
-                response = self.brt.invoke_model(
-                    modelId=model_id,
-                    body=json.dumps({
-                        "prompt": prompt_input,
-                        "maxTokens": 10,
-                        "temperature": 0.1,
-                        "topP":0.5
+                        "max_tokens": 512,
+                        "temperature": 0.3,
+                        "top_p": 0.95,
+                        "top_k": 5
                     }),
                     contentType='application/json',
                     accept='application/json'
@@ -134,36 +120,36 @@ _,_
             print(f"Error invoking model {model_id}: {str(e)}")
             return None
 
-    def parse_response(self, model_id, chapter, wait_time):
-        max_retries = 10
-        backoff_factor = 2
+    def parse_response(self, model_id, prompt_input, wait_time):
+        max_retries = 3
+        backoff_factor = 5
         valid_scores = [-1, -0.5, 0, 0.5, 1]
 
         for attempt in range(max_retries):
             try:
                 time.sleep(wait_time)
-                response = self.invoke_model(model_id, chapter)
-
-                if response is None:
-                    print(f"Attempt {attempt + 1}: No response from model. Retrying...")
-                    continue
-
+                response = self.invoke_model(model_id, prompt_input)
                 completion = self.extract_completion(model_id, response)
-                print(f"Completion: {completion}")  # Debugging
+                print(f"Completion: {completion}")
 
-                scores = completion.split(',')
-
-                if len(scores) == 2:
+                # Extract the first two valid scores from the response
+                scores = []
+                parts = completion.replace(",", " ").split()
+                for part in parts:
                     try:
-                        score1, score2 = map(float, scores)
-                        if score1 in valid_scores and score2 in valid_scores:
-                            return score1, score2
-                        else:
-                            print(f"Invalid scores: {score1}, {score2}. Retrying...")
+                        score = float(part)
+                        if score in valid_scores:
+                            scores.append(score)
+                            if len(scores) == 2:
+                                break
                     except ValueError:
-                        print(f"ValueError: Could not convert scores to float: {scores}")
-                else:
-                    print(f"Invalid number of scores: {len(scores)}. Retrying...")
+                        continue
+
+                # Assign scores or default to empty string
+                score1 = scores[0] if len(scores) > 0 else ""
+                score2 = scores[1] if len(scores) > 1 else ""
+                print(f"Score 1: {score1}, Score 2: {score2}")  # Debugging
+                return score1, score2
 
             except Exception as e:
                 wait_time = backoff_factor ** attempt
@@ -187,9 +173,6 @@ _,_
         elif model_id.startswith('mistral'):
             response_body = json.loads(response['body'].read())
             return response_body['outputs'][0]['text'].strip()
-        elif model_id.startswith('ai21'):
-            response_body = json.loads(response['body'].read())
-            return response_body['completions'][0]['data']['text'].strip()
         else:
             raise ValueError(f"Unsupported model: {model_id}")
 
@@ -221,10 +204,4 @@ _,_
         model_id = 'mistral.mistral-large-2402-v1:0'
         prompt_input = self.prompt(model_id, chapter)
         wait_time = 1
-        return self.parse_response(model_id, prompt_input, wait_time)
-
-    def Jurassic2Ultra(self, chapter): # Additional prompt "The example output is an example of what you should return, not the actual output."
-        model_id = 'ai21.j2-ultra-v1'
-        prompt_input = self.prompt(model_id, chapter)
-        wait_time = 2.5
         return self.parse_response(model_id, prompt_input, wait_time)
