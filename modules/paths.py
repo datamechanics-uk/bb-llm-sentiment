@@ -19,6 +19,9 @@ class Paths:
     def data(self):
         return os.path.join(self.root, 'data')
 
+    def all_data_csv(self):
+        return os.path.join(self.root, 'data', 'all_data.csv')
+
     def modules(self):
         return os.path.join(self.root, 'modules')
 

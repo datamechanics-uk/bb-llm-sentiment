@@ -16,6 +16,7 @@ bb_dates['Date'] = pd.to_datetime(bb_dates['Year'] + '-' + bb_dates['Month'] + '
 bb_dates['YearMonth'] = bb_dates['Date'].dt.to_period('M')
 
 llm_files = ["Claude35Sonnet_scores.csv", "CohereCommandRPlus_scores.csv", "MetaLlama370B_scores.csv", "MistralLarge2402_scores.csv", "TitanTextPremier_scores.csv"]
+llm_models = ["claude35sonnet", "coherecommandrplus", "metallama370b", "mistrallarge2402", "titantextpremier"]
 llm_scores = [pd.read_csv(os.path.join(paths.data(), "llm_scores", file)) for file in llm_files]
 
 for df in llm_scores:
@@ -25,16 +26,24 @@ all_scores = bb_dates[['Date']].copy()
 
 chapters = ["atlanta", "boston", "chicago", "cleveland", "dallas", "kansas_city", "minneapolis", "new_york", "philadelphia", "richmond", "san_francisco", "st_louis", "national_summary"]
 
+# Combine scores for each chapter and model
 for chapter in chapters:
-    combined_scores = []
-    for year_month in bb_dates['YearMonth']:
-        scores = [
-            str(df.loc[df['Date'] == year_month, chapter].values[0])
-            if not df.loc[df['Date'] == year_month, chapter].empty else ''
-            for df in llm_scores
-        ]
-        combined_scores.append(', '.join(scores))
-    all_scores[chapter] = combined_scores
+    for model, df in zip(llm_models, llm_scores):
+        column_name = f"{chapter}_{model}"
+        combined_scores = []
+        for year_month in bb_dates['YearMonth']:
+            score = df.loc[df['Date'] == year_month, chapter].values[0] if not df.loc[df['Date'] == year_month, chapter].empty else ''
+            combined_scores.append(score)
+        all_scores[column_name] = combined_scores
+
+# Calculate average scores for each model
+for model in llm_models:
+    average_scores = []
+    for i in range(len(all_scores)):
+        chapter_scores = [all_scores[f"{chapter}_{model}"].iloc[i] for chapter in chapters]
+        average_score = sum(chapter_scores) / len(chapter_scores)
+        average_scores.append(average_score)
+    all_scores[f"average_{model}"] = average_scores
 
 spx_returns = pd.read_excel(paths.spx_data(), skiprows=6)
 spx_returns.columns = spx_returns.columns.str.strip()
