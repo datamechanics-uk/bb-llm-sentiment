@@ -24,3 +24,12 @@ class Paths:
 
     def scraper(self):
         return os.path.join(self.root, 'scraper')
+
+    def llm(self, model_name : str):
+        return os.path.join(self.root, 'data', 'llm_scores', model_name)
+    
+    def spx_data(self):
+        return os.path.join(self.root, 'data', 'spx', 'spx.xlsx')
+    
+    def control_vars(self, variable_name):
+        return os.path.join(self.root, 'data', 'control_variables', variable_name)

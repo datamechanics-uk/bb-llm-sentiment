@@ -34,14 +34,11 @@ def save_to_csv(results, output_file):
             writer.writerow(['Date', 'Metric'] + districts)
         
         for date, counts in sorted(results.items()):
-            gdp_row = [date, 'GDP']
-            sp500_row = [date, 'SP500']
+            row = [date]
             for district in districts:
-                gdp_score, sp500_score = counts.get(district, ('', ''))
-                gdp_row.append(gdp_score)
-                sp500_row.append(sp500_score)
-            writer.writerow(gdp_row)
-            writer.writerow(sp500_row)
+                score = counts.get(district, '')
+                row.append(score)
+            writer.writerow(row)
             csvfile.flush() # Ensures data is written immediately
 
 def process_beige_books(root_dir, model):
@@ -52,7 +49,7 @@ def process_beige_books(root_dir, model):
         year_path = os.path.join(root_dir, year)
         for month in os.listdir(year_path):
             date_key = f"{year}-{month}"
-            if (date_key, 'GDP') in existing_rows and (date_key, 'SP500') in existing_rows:
+            if (date_key,) in existing_rows:
                 print(f"Skipping {date_key} as it already exists in the CSV.")
                 continue
             
@@ -63,15 +60,15 @@ def process_beige_books(root_dir, model):
                 chapter = read_beige_book_text(file_path)
                 district = file.split('.')[0]
                 try:
-                    gdp_score, sp500_score = model(chapter=chapter)
-                    results[date_key][district] = (gdp_score, sp500_score)
-                    print(f"Processed {date_key} - {district}: GDP score {gdp_score}, SP500 score {sp500_score}")
+                    score = model(chapter=chapter)
+                    results[date_key][district] = score
+                    print(f"Processed {date_key} - {district}: Score {score}")
                 except ValueError as e:
                     print(f"Error scoring text for {date_key} - {district}: {e}")
                 except Exception as e:
                     print(f"Unexpected error for {date_key} - {district}: {e}")
             
-            # Save results after processing each month
+            # Save results after processing each BB report
             save_to_csv(results, output_file)
 
 if __name__ == "__main__":
@@ -80,10 +77,10 @@ if __name__ == "__main__":
 
     models = [
         llm.TitanTextPremier,
-        llm.MistralLarge2402,
+        llm.Claude35Sonnet,
         llm.CohereCommandRPlus,
         llm.MetaLlama370B,
-        llm.Claude35Sonnet
+        llm.MistralLarge2402,
     ]
 
     for model in models:
