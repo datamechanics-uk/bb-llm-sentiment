@@ -18,6 +18,9 @@ class Paths:
 
     def data(self):
         return os.path.join(self.root, 'data')
+    
+    def bb_dates(self):
+        return os.path.join(self.root, 'data', 'bb_dates.xlsx')
 
     def all_data_csv(self):
         return os.path.join(self.root, 'data', 'all_data.csv')
@@ -28,11 +31,17 @@ class Paths:
     def scraper(self):
         return os.path.join(self.root, 'scraper')
 
-    def llm(self, model_name : str):
-        return os.path.join(self.root, 'data', 'llm_scores', model_name)
+    def llm_scores_folder(self):
+        return os.path.join(self.root, 'data', 'llm_scores')
     
-    def spx_data(self):
+    def spx_data_csv(self):
         return os.path.join(self.root, 'data', 'spx', 'spx.xlsx')
     
-    def control_vars(self, variable_name):
-        return os.path.join(self.root, 'data', 'control_variables', variable_name)
+    def control_vars_folder(self):
+        return os.path.join(self.root, 'data', 'control variables')
+    
+    def figures(self):
+        figures_path = os.path.join(self.root, 'figures')
+        if not os.path.exists(figures_path):
+            os.makedirs(figures_path)
+        return figures_path
