@@ -40,8 +40,10 @@ class Paths:
     def control_vars_folder(self):
         return os.path.join(self.root, 'data', 'control variables')
     
-    def figures(self):
-        figures_path = os.path.join(self.root, 'figures')
-        if not os.path.exists(figures_path):
-            os.makedirs(figures_path)
-        return figures_path
+    def pls_results_file(self):
+        return os.path.join(self.root, 'analysis', 'pls_results.xlsx')
+    
+    def pls_results_folder(self):
+        return os.path.join(self.root, 'analysis', 'results')
+    
+    

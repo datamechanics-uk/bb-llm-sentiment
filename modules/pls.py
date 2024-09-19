@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score, mean_squared_error
 import logging
 
-class PLSModel:
+class NIPALSModel:
     def __init__(self, max_components=13, n_splits=5):
         self.max_components = max_components
         self.n_splits = n_splits
@@ -66,9 +66,9 @@ class PLSModel:
         Y_pred_scaled = self.pls.predict(X_scaled)
         return self.y_scaler.inverse_transform(Y_pred_scaled)
 
-    def get_metrics(self, Y_true, Y_pred):
-        metrics = {}
-        for i in range(Y_true.shape[1]):
+    def get_metrics(self, Y_true, Y_pred, y_vars):
+        metrics_list = []
+        for i, y_var in enumerate(y_vars):
             y_true = Y_true[:, i]
             y_pred = Y_pred[:, i]
             
@@ -91,28 +91,50 @@ class PLSModel:
                 f_statistic = 0
                 p_value = 1
             
-            metrics[f'dep_var_{i+1}'] = {
-                'mse': mse,
-                'r2': r2,
-                'r2_adj': r2_adj,
-                'f_statistic': f_statistic,
-                'p_value': p_value,
-                'ss_total': ss_total,
-                'ss_residual': ss_residual,
-                'ss_regression': ss_regression,
-                'df_regression': df_regression,
-                'df_residual': df_residual,
-                'optimal_components': self.optimal_n_components
-            }
+            metrics_list.append({
+                'Dependent Variable': y_var,
+                'MSE': mse,
+                'R²': r2,
+                'Adjusted R²': r2_adj,
+                'F-Statistic': f_statistic,
+                'P-Value': p_value,
+                'SS Total': ss_total,
+                'SS Residual': ss_residual,
+                'SS Regression': ss_regression,
+                'DF Regression (Optimal Components)': df_regression,
+                'DF Residual': df_residual
+            })
         
-        return metrics
+        return pd.DataFrame(metrics_list)
+    
+    def plot_correlation_matrix(self, data):
+        numeric_data = data.select_dtypes(include=[np.number])
+        correlation_matrix = numeric_data.corr()
 
-    def calculate_q2(self, X, Y):
-        X, Y = self.remove_nan_rows(X, Y)
-        Y_pred = self.predict(X)
-        ss_total = np.sum((Y - np.mean(Y, axis=0)) ** 2, axis=0)
-        ss_res = np.sum((Y - Y_pred) ** 2, axis=0)
-        return 1 - (ss_res / ss_total)
+        plt.figure(figsize=(12, 10))
+        sns.heatmap(correlation_matrix, annot=False, cmap='coolwarm', square=True, cbar_kws={"shrink": .8})
+        plt.title('Correlation Matrix')
+        plt.tight_layout()
+        plt.savefig('results/correlation_matrix.png', dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        return correlation_matrix
+        
+    def descriptive_statistics(self, data, writer):
+        numeric_data = data.select_dtypes(include=[np.number])
+        
+        stats = {
+            'Mean': numeric_data.mean(),
+            'Min': numeric_data.min(),
+            'Max': numeric_data.max(),
+            'Standard Deviation': numeric_data.std(),
+            'N (Observations)': numeric_data.count(),
+            'Missing Values': numeric_data.isnull().sum(),
+        }
+        
+        descriptive_stats = pd.DataFrame(stats)
+        descriptive_stats = descriptive_stats.reset_index().rename(columns={'index': 'Variable Name'})
+        descriptive_stats.to_excel(writer, sheet_name='Descriptive Statistics', index=False)
 
     def plot_relationship(self, Y_true, Y_pred, llm_model, y_vars, results_dir):
         os.makedirs(results_dir, exist_ok=True)
